@@ -15,8 +15,9 @@ export function getApiKey(): string | null {
 
 export async function callGLM(prompt: string): Promise<string> {
   const apiKey = getApiKey()
+  const proxyUrl = process.env.GLM_PROXY_URL
 
-  if (!apiKey) {
+  if (!apiKey && !proxyUrl) {
     console.error('\n❌ API Key not found!')
     console.error(
       'Please set GLM_API_KEY environment variable or use --key option'
@@ -27,12 +28,18 @@ export async function callGLM(prompt: string): Promise<string> {
 
   console.log('\n🤖 Calling GLM-4.5-Flash API...')
 
-  const response = await fetch(GLM_API_URL, {
+  const url = proxyUrl || GLM_API_URL
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  }
+
+  if (apiKey) {
+    headers['Authorization'] = `Bearer ${apiKey}`
+  }
+
+  const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`
-    },
+    headers,
     body: JSON.stringify({
       model: GLM_MODEL,
       messages: [{ role: 'user', content: prompt }],

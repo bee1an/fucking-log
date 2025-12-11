@@ -5,12 +5,12 @@ import * as path from 'path'
 export default function handler(req: VercelRequest, res: VercelResponse) {
   // Debug mode: check if env var exists
   if (req.query.debug === '1') {
-    const hasKey = !!process.env.GLM_API_KEY
-    const keyPreview = process.env.GLM_API_KEY
-      ? process.env.GLM_API_KEY.slice(0, 8) + '...'
-      : 'NOT SET'
+    const protocol = req.headers['x-forwarded-proto'] || 'https'
+    const host = req.headers['host']
+    const proxyUrl = `${protocol}://${host}/api/generate`
+
     res.setHeader('Content-Type', 'text/plain')
-    res.send(`GLM_API_KEY exists: ${hasKey}\nPreview: ${keyPreview}`)
+    res.send(`Proxy URL target: ${proxyUrl}\n(API Key is handled server-side)`)
     return
   }
 
@@ -24,12 +24,12 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
     let scriptContent = fs.readFileSync(scriptPath, 'utf-8')
 
-    // Inject API key from Vercel environment variable
-    const apiKey = process.env.GLM_API_KEY
-    const injectionCode = apiKey
-      ? `process.env.GLM_API_KEY = process.env.GLM_API_KEY || "${apiKey}";`
-      : `console.error("⚠️  Warning: GLM_API_KEY is not set in the Vercel environment.");`
+    // Inject Proxy URL derived from the current request host
+    const protocol = req.headers['x-forwarded-proto'] || 'https'
+    const host = req.headers['host']
+    const proxyUrl = `${protocol}://${host}/api/generate`
 
+    const injectionCode = `process.env.GLM_PROXY_URL = "${proxyUrl}";`
     const injection = `\n// Injected by Vercel\n${injectionCode}\n`
 
     if (scriptContent.startsWith('#!/')) {
