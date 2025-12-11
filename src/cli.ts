@@ -1,5 +1,5 @@
 import * as path from 'path'
-import { Period } from './config'
+import { Period, Persona, DEFAULT_PERSONA } from './config'
 
 export interface ParsedArgs {
   copyFlag: boolean
@@ -12,9 +12,22 @@ export interface ParsedArgs {
   period: Period | null
   minWords: number | null
   maxWords: number | null
+  persona: Persona
 }
 
 const VALID_PERIODS: Period[] = ['day', 'week', 'month', 'quarter', 'year']
+const VALID_PERSONAS: Persona[] = [
+  'formal',
+  'chill',
+  'meme',
+  'brief',
+  'tech',
+  'grind',
+  'slack',
+  'poet',
+  'edgy',
+  'legacy'
+]
 
 export function parseArgs(rawArgs: string[]): ParsedArgs {
   const result: ParsedArgs = {
@@ -27,7 +40,8 @@ export function parseArgs(rawArgs: string[]): ParsedArgs {
     prompt: null,
     period: null,
     minWords: null,
-    maxWords: null
+    maxWords: null,
+    persona: DEFAULT_PERSONA
   }
 
   let i = 0
@@ -67,6 +81,18 @@ export function parseArgs(rawArgs: string[]): ParsedArgs {
       result.minWords = parseInt(arg.split('=')[1], 10)
     } else if (arg.startsWith('--max-words=')) {
       result.maxWords = parseInt(arg.split('=')[1], 10)
+    } else if (arg.startsWith('--persona=')) {
+      const value = arg.split('=')[1] as Persona
+      if (VALID_PERSONAS.includes(value)) {
+        result.persona = value
+      } else {
+        console.error(
+          `Error: Invalid persona "${value}". Valid: ${VALID_PERSONAS.join(
+            ', '
+          )}`
+        )
+        process.exit(1)
+      }
     } else if (!result.startDate) {
       result.startDate = arg
     } else if (!result.endDate) {
@@ -97,6 +123,19 @@ Options:
   --period=<period>       Use period mode (day/week/month/quarter/year)
   --min-words=<n>         Set minimum word count (overrides period default)
   --max-words=<n>         Set maximum word count (overrides period default)
+  --persona=<persona>     Set writing style (default: tech)
+
+Personas:
+  formal - Professional, suitable for reports to management
+  chill  - Casual, like chatting with colleagues
+  meme   - Full of internet memes and emojis
+  brief  - Minimal, just the essentials
+  tech   - Technical details focused (default)
+  grind  - Emphasizes hard work and dedication
+  slack  - Understates everything, sounds effortless
+  poet   - Artistic and poetic descriptions
+  edgy   - Chuunibyou style, dramatic and dark
+  legacy - Classical Chinese style
 
 Examples:
   fucking-log 2024-10-01 2024-12-31

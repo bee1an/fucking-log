@@ -25,7 +25,8 @@ async function main(): Promise<void> {
     prompt,
     period: periodArg,
     minWords: minWordsArg,
-    maxWords: maxWordsArg
+    maxWords: maxWordsArg,
+    persona
   } = parseArgs(rawArgs)
 
   // Handle help
@@ -163,7 +164,7 @@ async function main(): Promise<void> {
     combinedCommits,
     sinceStr,
     displayEndDate,
-    wordRange
+    { wordRange, persona }
   )
 
   // Copy prompt to clipboard only (skip AI generation)

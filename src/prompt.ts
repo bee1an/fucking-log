@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import { DEFAULT_PROMPT } from './config'
+import { Persona, PERSONA_PROMPTS, DEFAULT_PERSONA } from './config'
 
 const CWD = process.cwd()
 const PROMPT_FILE = path.join(CWD, 'prompt.txt')
@@ -12,8 +12,10 @@ export function setCliPrompt(prompt: string | null): void {
   CLI_PROMPT = prompt
 }
 
-export async function loadPromptTemplate(): Promise<string> {
-  // Priority: CLI prompt (file/URL) > local prompt.txt > embedded default
+export async function loadPromptTemplate(
+  persona: Persona = DEFAULT_PERSONA
+): Promise<string> {
+  // Priority: CLI prompt (file/URL) > local prompt.txt > persona prompt
 
   if (CLI_PROMPT) {
     // Check if it's a URL
@@ -44,24 +46,27 @@ export async function loadPromptTemplate(): Promise<string> {
     return fs.readFileSync(PROMPT_FILE, 'utf-8')
   }
 
-  // Embedded default
-  return DEFAULT_PROMPT
+  // Persona-based prompt
+  return PERSONA_PROMPTS[persona]
 }
 
 export async function generatePrompt(
   commits: string,
   startDate: string,
   endDate: string,
-  wordRange?: { minWords: number; maxWords: number }
+  options: {
+    wordRange?: { minWords: number; maxWords: number }
+    persona?: Persona
+  } = {}
 ): Promise<string> {
-  const template = await loadPromptTemplate()
+  const template = await loadPromptTemplate(options.persona)
   let prompt = template
     .replace(/\{\{startDate\}\}/g, startDate)
     .replace(/\{\{endDate\}\}/g, endDate)
     .replace(/\{\{commits\}\}/g, commits)
 
-  if (wordRange) {
-    prompt += `\n\n## 字数要求\n请将报告控制在 ${wordRange.minWords}-${wordRange.maxWords} 字之间。`
+  if (options.wordRange) {
+    prompt += `\n\n## 字数要求\n请将报告控制在 ${options.wordRange.minWords}-${options.wordRange.maxWords} 字之间。`
   }
 
   return prompt
