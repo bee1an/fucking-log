@@ -25,3 +25,25 @@ export const DEFAULT_PROMPT = `你是一位专业的技术文档撰写专家。�
 （1）...
 （2）...
 （3）...`
+
+// Period type definition
+export type Period = 'day' | 'week' | 'month' | 'quarter' | 'year'
+
+export const PERIOD_CONFIG: Record<
+  Period,
+  { days: number; minWords: number; maxWords: number }
+> = {
+  day: { days: 1, minWords: 25, maxWords: 100 },
+  week: { days: 7, minWords: 50, maxWords: 250 },
+  month: { days: 30, minWords: 100, maxWords: 400 },
+  quarter: { days: 90, minWords: 250, maxWords: 750 },
+  year: { days: 365, minWords: 500, maxWords: 1500 }
+}
+
+export const PERIOD_ORDER: Period[] = [
+  'day',
+  'week',
+  'month',
+  'quarter',
+  'year'
+]

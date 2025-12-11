@@ -1,10 +1,16 @@
 import * as path from 'path'
 import { parseArgs, printUsage } from './cli'
-import { parseDate, formatDate } from './date'
+import {
+  parseDate,
+  formatDate,
+  getDateRangeFromPeriod,
+  inferPeriod
+} from './date'
 import { isGitRepo, getGitUserName, getCommits } from './git'
 import { setCliPrompt, generatePrompt } from './prompt'
 import { setCliApiKey, callGLM } from './api'
 import { copyToClipboard } from './clipboard'
+import { PERIOD_CONFIG, Period } from './config'
 
 async function main(): Promise<void> {
   const rawArgs = process.argv.slice(2)
@@ -15,7 +21,10 @@ async function main(): Promise<void> {
     startDate: startDateStr,
     endDate: endDateStr,
     apiKey,
-    prompt
+    prompt,
+    period: periodArg,
+    minWords: minWordsArg,
+    maxWords: maxWordsArg
   } = parseArgs(rawArgs)
 
   // Handle help
@@ -28,15 +37,33 @@ async function main(): Promise<void> {
   if (apiKey) setCliApiKey(apiKey)
   if (prompt) setCliPrompt(prompt)
 
-  if (!startDateStr) {
+  let startDate: Date
+  let endDate: Date
+  let period: Period
+
+  // Two modes: specific dates (priority) OR period mode
+  if (startDateStr) {
+    // Mode 1: Specific date range, period arg is ignored
+    startDate = parseDate(startDateStr)
+    endDate = endDateStr ? parseDate(endDateStr) : new Date()
+    endDate.setDate(endDate.getDate() + 1)
+
+    // Infer period from actual days
+    const days = Math.ceil(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+    )
+    period = inferPeriod(days)
+  } else if (periodArg) {
+    // Mode 2: Period mode, calculate date range
+    period = periodArg
+    const range = getDateRangeFromPeriod(period)
+    startDate = range.startDate
+    endDate = range.endDate
+    endDate.setDate(endDate.getDate() + 1)
+  } else {
     printUsage()
     process.exit(1)
   }
-
-  // Parse dates
-  const startDate = parseDate(startDateStr)
-  const endDate = endDateStr ? parseDate(endDateStr) : new Date()
-  endDate.setDate(endDate.getDate() + 1)
 
   // If no repos specified, use current directory
   const repoPaths = repos.length > 0 ? repos : [process.cwd()]
@@ -55,6 +82,7 @@ async function main(): Promise<void> {
   const displayEndDate = formatDate(new Date(endDate.getTime() - 86400000))
 
   console.log(`\nDate range: ${sinceStr} to ${displayEndDate}`)
+  console.log(`Period: ${period}`)
   console.log(`Repositories: ${repoPaths.length}`)
   console.log('─'.repeat(60))
 
@@ -74,7 +102,13 @@ async function main(): Promise<void> {
       console.log(
         `\n📁 ${repoName} (${commitLines.length} commits, author: ${userName})`
       )
-      console.log(commits)
+      // Display max 5 commits, show ellipsis for the rest
+      const MAX_DISPLAY = 5
+      const displayLines = commitLines.slice(0, MAX_DISPLAY)
+      console.log(displayLines.join('\n'))
+      if (commitLines.length > MAX_DISPLAY) {
+        console.log(`... and ${commitLines.length - MAX_DISPLAY} more commits`)
+      }
 
       allCommits.push(`[${repoName}]\n${commits}`)
     } else {
@@ -91,10 +125,17 @@ async function main(): Promise<void> {
   }
 
   const combinedCommits = allCommits.join('\n\n')
+  const periodConfig = PERIOD_CONFIG[period]
+  // User-specified word range overrides period defaults
+  const wordRange = {
+    minWords: minWordsArg ?? periodConfig.minWords,
+    maxWords: maxWordsArg ?? periodConfig.maxWords
+  }
   const promptText = await generatePrompt(
     combinedCommits,
     sinceStr,
-    displayEndDate
+    displayEndDate,
+    wordRange
   )
 
   // Copy prompt to clipboard only (skip AI generation)

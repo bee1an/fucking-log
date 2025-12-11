@@ -1,4 +1,5 @@
 import * as path from 'path'
+import { Period } from './config'
 
 export interface ParsedArgs {
   copyFlag: boolean
@@ -8,7 +9,12 @@ export interface ParsedArgs {
   endDate: string | null
   apiKey: string | null
   prompt: string | null
+  period: Period | null
+  minWords: number | null
+  maxWords: number | null
 }
+
+const VALID_PERIODS: Period[] = ['day', 'week', 'month', 'quarter', 'year']
 
 export function parseArgs(rawArgs: string[]): ParsedArgs {
   const result: ParsedArgs = {
@@ -18,7 +24,10 @@ export function parseArgs(rawArgs: string[]): ParsedArgs {
     startDate: null,
     endDate: null,
     apiKey: null,
-    prompt: null
+    prompt: null,
+    period: null,
+    minWords: null,
+    maxWords: null
   }
 
   let i = 0
@@ -44,6 +53,20 @@ export function parseArgs(rawArgs: string[]): ParsedArgs {
       if (i < rawArgs.length) {
         result.prompt = rawArgs[i]
       }
+    } else if (arg.startsWith('--period=')) {
+      const value = arg.split('=')[1] as Period
+      if (VALID_PERIODS.includes(value)) {
+        result.period = value
+      } else {
+        console.error(
+          `Error: Invalid period "${value}". Valid: ${VALID_PERIODS.join(', ')}`
+        )
+        process.exit(1)
+      }
+    } else if (arg.startsWith('--min-words=')) {
+      result.minWords = parseInt(arg.split('=')[1], 10)
+    } else if (arg.startsWith('--max-words=')) {
+      result.maxWords = parseInt(arg.split('=')[1], 10)
     } else if (!result.startDate) {
       result.startDate = arg
     } else if (!result.endDate) {
@@ -59,7 +82,11 @@ export function printUsage(): void {
   console.log(`
 fucking-log - Git commit to quarterly report generator
 
-Usage: fucking-log <start-date> [end-date] [options]
+Usage:
+  fucking-log <start-date> [end-date] [options]    # Specific date range
+  fucking-log --period=<period> [options]          # Period mode
+
+Periods: day, week, month, quarter, year
 
 Options:
   -c, --copy              Copy prompt to clipboard only (skip AI generation)
@@ -67,16 +94,19 @@ Options:
   -k, --key <apikey>      Specify GLM API key directly
   -p, --prompt <path|url> Specify custom prompt template (file path or URL)
   -h, --help              Show this help message
+  --period=<period>       Use period mode (day/week/month/quarter/year)
+  --min-words=<n>         Set minimum word count (overrides period default)
+  --max-words=<n>         Set maximum word count (overrides period default)
 
 Examples:
   fucking-log 2024-10-01 2024-12-31
   fucking-log 10-01 12-31
+  fucking-log --period=week
+  fucking-log --period=quarter -r /path/to/repo
   fucking-log 10-01 --prompt ./my-prompt.txt
-  fucking-log 10-01 --prompt https://example.com/prompt.txt
-  fucking-log 10-01 -r /path/to/repo1 -r /path/to/repo2
 
 Remote Usage:
-  curl -s https://your-app.vercel.app/fucking-log.js | node - 10-01
+  curl -s https://your-app.vercel.app/index.js | node - --period=week
 
 API Key Priority: --key > GLM_API_KEY env > embedded default
 `)

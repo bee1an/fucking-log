@@ -1,4 +1,5 @@
 // Date parsing and formatting utilities
+import { Period, PERIOD_CONFIG, PERIOD_ORDER } from './config'
 
 export function parseDate(dateStr: string): Date {
   const currentYear = new Date().getFullYear()
@@ -35,4 +36,26 @@ export function formatDate(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
+}
+
+// Calculate date range from period (counting back from today)
+export function getDateRangeFromPeriod(period: Period): {
+  startDate: Date
+  endDate: Date
+} {
+  const endDate = new Date()
+  const startDate = new Date()
+  startDate.setDate(endDate.getDate() - PERIOD_CONFIG[period].days + 1)
+  return { startDate, endDate }
+}
+
+// Infer period from actual number of days
+export function inferPeriod(days: number): Period {
+  for (let i = PERIOD_ORDER.length - 1; i >= 0; i--) {
+    const p = PERIOD_ORDER[i]
+    if (days >= PERIOD_CONFIG[p].days) {
+      return p
+    }
+  }
+  return 'day'
 }
