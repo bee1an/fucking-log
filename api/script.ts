@@ -11,7 +11,23 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       return
     }
 
-    const scriptContent = fs.readFileSync(scriptPath, 'utf-8')
+    let scriptContent = fs.readFileSync(scriptPath, 'utf-8')
+
+    // Inject API key from Vercel environment variable
+    const apiKey = process.env.GLM_API_KEY
+    if (apiKey) {
+      // Insert API key assignment at the beginning of the script (after shebang if present)
+      const injection = `\n// Injected by Vercel\nprocess.env.GLM_API_KEY = process.env.GLM_API_KEY || "${apiKey}";\n`
+      if (scriptContent.startsWith('#!/')) {
+        const firstNewline = scriptContent.indexOf('\n')
+        scriptContent =
+          scriptContent.slice(0, firstNewline + 1) +
+          injection +
+          scriptContent.slice(firstNewline + 1)
+      } else {
+        scriptContent = injection + scriptContent
+      }
+    }
 
     res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
     res.setHeader('Cache-Control', 'public, max-age=60')

@@ -1,9 +1,9 @@
 {
   "rewrites": [
     {
-      "source": "/fucking-log.js",
+      "source": "/index.js",
       "destination": "/api/script"
     }
   ],
-  "buildCommand": "npm run build"
+  "buildCommand": "pnpm run build"
 }
