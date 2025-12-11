@@ -10,8 +10,6 @@ export interface ParsedArgs {
   apiKey: string | null
   prompt: string | null
   period: Period | null
-  minWords: number | null
-  maxWords: number | null
   persona: Persona
 }
 
@@ -39,8 +37,6 @@ export function parseArgs(rawArgs: string[]): ParsedArgs {
     apiKey: null,
     prompt: null,
     period: null,
-    minWords: null,
-    maxWords: null,
     persona: DEFAULT_PERSONA
   }
 
@@ -77,10 +73,6 @@ export function parseArgs(rawArgs: string[]): ParsedArgs {
         )
         process.exit(1)
       }
-    } else if (arg.startsWith('--min-words=')) {
-      result.minWords = parseInt(arg.split('=')[1], 10)
-    } else if (arg.startsWith('--max-words=')) {
-      result.maxWords = parseInt(arg.split('=')[1], 10)
     } else if (arg.startsWith('--persona=')) {
       const value = arg.split('=')[1] as Persona
       if (VALID_PERSONAS.includes(value)) {
@@ -109,6 +101,7 @@ export function printUsage(): void {
 fucking-log - Git commit to quarterly report generator
 
 Usage:
+  fucking-log                                       # Default: --period=quarter --persona=brief
   fucking-log <start-date> [end-date] [options]    # Specific date range
   fucking-log --period=<period> [options]          # Period mode
 
@@ -120,17 +113,15 @@ Options:
   -k, --key <apikey>      Specify GLM API key directly
   -p, --prompt <path|url> Specify custom prompt template (file path or URL)
   -h, --help              Show this help message
-  --period=<period>       Use period mode (day/week/month/quarter/year)
-  --min-words=<n>         Set minimum word count (overrides period default)
-  --max-words=<n>         Set maximum word count (overrides period default)
-  --persona=<persona>     Set writing style (default: tech)
+  --period=<period>       Use period mode (default: quarter)
+  --persona=<persona>     Set writing style (default: brief)
 
 Personas:
   formal - Professional, suitable for reports to management
   chill  - Casual, like chatting with colleagues
   meme   - Full of internet memes and emojis
-  brief  - Minimal, just the essentials
-  tech   - Technical details focused (default)
+  brief  - Minimal, just the essentials (default)
+  tech   - Technical details focused
   grind  - Emphasizes hard work and dedication
   slack  - Understates everything, sounds effortless
   poet   - Artistic and poetic descriptions

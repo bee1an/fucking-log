@@ -29,15 +29,12 @@ export const DEFAULT_PROMPT = `你是一位专业的技术文档撰写专家。�
 // Period type definition
 export type Period = 'day' | 'week' | 'month' | 'quarter' | 'year'
 
-export const PERIOD_CONFIG: Record<
-  Period,
-  { days: number; minWords: number; maxWords: number }
-> = {
-  day: { days: 1, minWords: 25, maxWords: 100 },
-  week: { days: 7, minWords: 50, maxWords: 250 },
-  month: { days: 30, minWords: 100, maxWords: 400 },
-  quarter: { days: 90, minWords: 250, maxWords: 750 },
-  year: { days: 365, minWords: 500, maxWords: 1500 }
+export const PERIOD_CONFIG: Record<Period, { days: number }> = {
+  day: { days: 1 },
+  week: { days: 7 },
+  month: { days: 30 },
+  quarter: { days: 90 },
+  year: { days: 365 }
 }
 
 export const PERIOD_ORDER: Period[] = [
@@ -61,7 +58,7 @@ export type Persona =
   | 'edgy'
   | 'legacy'
 
-export const DEFAULT_PERSONA: Persona = 'tech'
+export const DEFAULT_PERSONA: Persona = 'brief'
 
 export const PERSONA_PROMPTS: Record<Persona, string> = {
   formal: `你是一位专业的技术文档撰写专家。请根据以下 Git commit 记录，生成一份正式的工作报告。
@@ -79,11 +76,7 @@ export const PERSONA_PROMPTS: Record<Persona, string> = {
 - 分类整理 commit，按功能模块归类
 - 总结主要工作成果和技术亮点
 - 适合提交给领导或客户
-
-## 输出格式
-项目名：
-（1）...
-（2）...`,
+- 输出纯文本格式，不要使用 Markdown 语法`,
 
   chill: `你是一个轻松随意的程序员朋友。根据这些 commit 记录，帮我写个工作总结，语气随意点就行。
 
@@ -99,11 +92,7 @@ export const PERSONA_PROMPTS: Record<Persona, string> = {
 - 像和同事聊天一样的语气
 - 不用太正式，口语化一点
 - 简单说说干了啥就行
-
-## 格式
-项目名：
-- ...
-- ...`,
+- 输出纯文本格式，不要使用 Markdown 语法`,
 
   meme: `你是一个充满梗的程序员。根据这些 commit，用最整活的方式写个工作总结，越搞笑越好！
 
@@ -120,8 +109,7 @@ export const PERSONA_PROMPTS: Record<Persona, string> = {
 - 把普通的工作说得像是在拯救世界
 - 可以用 emoji、网络用语、程序员梗
 - 夸张一点没关系，要有娱乐性
-
-## 格式随意，开心就好 🎉`,
+- 输出纯文本格式，不要使用 Markdown 语法`,
 
   brief: `根据以下 commit 记录，用最简洁的语言总结工作内容。
 
@@ -133,8 +121,8 @@ export const PERSONA_PROMPTS: Record<Persona, string> = {
 
 要求：
 - 极简风格，只要核心结论
-- 每个项目最多 3 点
-- 不要废话`,
+- 不要废话
+- 输出纯文本格式，不要使用 Markdown 语法`,
 
   tech: `你是一位资深技术专家。请根据以下 Git commit 记录，生成一份偏技术细节的工作报告。
 
@@ -151,11 +139,7 @@ export const PERSONA_PROMPTS: Record<Persona, string> = {
 - 说明技术选型和架构决策
 - 提及解决的技术难点
 - 适合技术评审场景
-
-## 输出格式
-项目名：
-（1）...
-（2）...`,
+- 输出纯文本格式，不要使用 Markdown 语法`,
 
   grind: `你是一个超级卷的程序员。根据这些 commit，写一份能体现疯狂工作量的报告，让老板看了感动到流泪！
 
@@ -172,11 +156,7 @@ export const PERSONA_PROMPTS: Record<Persona, string> = {
 - 把每个 bugfix 说成是攻克技术难关
 - 突出加班、奋战、攻坚等关键词
 - 适合绩效汇报和年终总结
-
-## 输出格式
-项目名：
-（1）攻克了...
-（2）优化了...`,
+- 输出纯文本格式，不要使用 Markdown 语法`,
 
   slack: `你是一个会摸鱼的程序员。根据这些 commit，用最轻描淡写的方式总结工作，把大改动说成小修复。
 
@@ -193,10 +173,7 @@ export const PERSONA_PROMPTS: Record<Persona, string> = {
 - 大重构说成"小优化"
 - 听起来很轻松，显得游刃有余
 - 绝对不能让老板觉得你很忙
-
-## 格式
-- 做了点小调整...
-- 顺手修了个 bug...`,
+- 输出纯文本格式，不要使用 Markdown 语法`,
 
   poet: `你是一位有诗人气质的程序员。请用富有诗意的语言，根据这些 commit 记录写一份工作报告。
 
@@ -213,9 +190,7 @@ export const PERSONA_PROMPTS: Record<Persona, string> = {
 - 可以用比喻、拟人等修辞手法
 - 把代码工作描述得像是在创作艺术
 - 优美但不要太晦涩
-
-## 输出
-用散文诗的形式描述这段时间的工作...`,
+- 输出纯文本格式，不要使用 Markdown 语法`,
 
   edgy: `你是一个中二病晚期的程序员。根据这些 commit，用最中二的方式写工作报告！
 
@@ -233,9 +208,7 @@ export const PERSONA_PROMPTS: Record<Persona, string> = {
 - 把重构说成"封印古老的混沌代码"
 - 可以加入厨二台词、暗黑风格描述
 - 你的代码就是你的武器！
-
-## 输出
-吾之战绩如下...`,
+- 输出纯文本格式，不要使用 Markdown 语法`,
 
   legacy: `你是一位精通古文的程序员。请用文言文风格，根据这些 commit 记录撰写工作报告。
 
@@ -253,9 +226,5 @@ export const PERSONA_PROMPTS: Record<Persona, string> = {
 - 把 bug 说成"妖邪"
 - 把修复 bug 说成"降妖除魔"
 - 适度使用古诗词典故
-
-## 输出格式
-《XX项目志》
-其一：...
-其二：...`
+- 输出纯文本格式，不要使用 Markdown 语法`
 }

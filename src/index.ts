@@ -24,8 +24,6 @@ async function main(): Promise<void> {
     apiKey,
     prompt,
     period: periodArg,
-    minWords: minWordsArg,
-    maxWords: maxWordsArg,
     persona
   } = parseArgs(rawArgs)
 
@@ -55,16 +53,13 @@ async function main(): Promise<void> {
       (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
     )
     period = inferPeriod(days)
-  } else if (periodArg) {
-    // Mode 2: Period mode, calculate date range
-    period = periodArg
+  } else {
+    // Mode 2: Period mode, default to 'quarter' if not specified
+    period = periodArg || 'quarter'
     const range = getDateRangeFromPeriod(period)
     startDate = range.startDate
     endDate = range.endDate
     endDate.setDate(endDate.getDate() + 1)
-  } else {
-    printUsage()
-    process.exit(1)
   }
 
   // Determine repository paths
@@ -154,17 +149,11 @@ async function main(): Promise<void> {
   }
 
   const combinedCommits = allCommits.join('\n\n')
-  const periodConfig = PERIOD_CONFIG[period]
-  // User-specified word range overrides period defaults
-  const wordRange = {
-    minWords: minWordsArg ?? periodConfig.minWords,
-    maxWords: maxWordsArg ?? periodConfig.maxWords
-  }
   const promptText = await generatePrompt(
     combinedCommits,
     sinceStr,
     displayEndDate,
-    { wordRange, persona }
+    { persona }
   )
 
   // Copy prompt to clipboard only (skip AI generation)

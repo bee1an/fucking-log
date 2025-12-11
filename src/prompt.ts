@@ -54,20 +54,11 @@ export async function generatePrompt(
   commits: string,
   startDate: string,
   endDate: string,
-  options: {
-    wordRange?: { minWords: number; maxWords: number }
-    persona?: Persona
-  } = {}
+  options: { persona?: Persona } = {}
 ): Promise<string> {
   const template = await loadPromptTemplate(options.persona)
-  let prompt = template
+  return template
     .replace(/\{\{startDate\}\}/g, startDate)
     .replace(/\{\{endDate\}\}/g, endDate)
     .replace(/\{\{commits\}\}/g, commits)
-
-  if (options.wordRange) {
-    prompt += `\n\n## 字数要求\n请将报告控制在 ${options.wordRange.minWords}-${options.wordRange.maxWords} 字之间。`
-  }
-
-  return prompt
 }
