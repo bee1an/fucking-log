@@ -1,3 +1,4 @@
+import * as fs from 'fs'
 import * as path from 'path'
 import { parseArgs, printUsage } from './cli'
 import {
@@ -65,14 +66,41 @@ async function main(): Promise<void> {
     process.exit(1)
   }
 
-  // If no repos specified, use current directory
-  const repoPaths = repos.length > 0 ? repos : [process.cwd()]
+  // Determine repository paths
+  let repoPaths: string[]
 
-  // Validate all repos
-  for (const repoPath of repoPaths) {
-    if (!isGitRepo(repoPath)) {
-      console.error(`Error: ${repoPath} is not a git repository`)
-      process.exit(1)
+  if (repos.length > 0) {
+    // User specified repos, validate them
+    repoPaths = repos
+    for (const repoPath of repoPaths) {
+      if (!isGitRepo(repoPath)) {
+        console.error(`Error: ${repoPath} is not a git repository`)
+        process.exit(1)
+      }
+    }
+  } else {
+    // No repos specified, try current directory
+    const cwd = process.cwd()
+    if (isGitRepo(cwd)) {
+      repoPaths = [cwd]
+    } else {
+      // Current dir is not a git repo, scan one level of subdirectories
+      console.log(
+        '📂 Current directory is not a git repository, scanning subdirectories...'
+      )
+      const entries = fs.readdirSync(cwd, { withFileTypes: true })
+      repoPaths = entries
+        .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
+        .map((entry) => path.join(cwd, entry.name))
+        .filter((subPath) => isGitRepo(subPath))
+
+      if (repoPaths.length === 0) {
+        console.error(
+          'Error: No git repositories found in current directory or subdirectories'
+        )
+        process.exit(1)
+      }
+      console.log(`Found ${repoPaths.length} git repositories`)
     }
   }
 
