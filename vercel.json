@@ -5,5 +5,10 @@
       "destination": "/api/script"
     }
   ],
-  "buildCommand": "pnpm run build"
+  "buildCommand": "pnpm run build",
+  "functions": {
+    "api/script.ts": {
+      "includeFiles": "dist/**"
+    }
+  }
 }

@@ -3,11 +3,22 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
+  // Debug mode: check if env var exists
+  if (req.query.debug === '1') {
+    const hasKey = !!process.env.GLM_API_KEY
+    const keyPreview = process.env.GLM_API_KEY
+      ? process.env.GLM_API_KEY.slice(0, 8) + '...'
+      : 'NOT SET'
+    res.setHeader('Content-Type', 'text/plain')
+    res.send(`GLM_API_KEY exists: ${hasKey}\nPreview: ${keyPreview}`)
+    return
+  }
+
   try {
-    const scriptPath = path.join(process.cwd(), 'dist', 'index.js')
+    const scriptPath = path.join(process.cwd(), 'dist', 'cli.js')
 
     if (!fs.existsSync(scriptPath)) {
-      res.status(404).send('Script not found. Run npm run build first.')
+      res.status(404).send('Script not found.')
       return
     }
 
@@ -15,18 +26,20 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
     // Inject API key from Vercel environment variable
     const apiKey = process.env.GLM_API_KEY
-    if (apiKey) {
-      // Insert API key assignment at the beginning of the script (after shebang if present)
-      const injection = `\n// Injected by Vercel\nprocess.env.GLM_API_KEY = process.env.GLM_API_KEY || "${apiKey}";\n`
-      if (scriptContent.startsWith('#!/')) {
-        const firstNewline = scriptContent.indexOf('\n')
-        scriptContent =
-          scriptContent.slice(0, firstNewline + 1) +
-          injection +
-          scriptContent.slice(firstNewline + 1)
-      } else {
-        scriptContent = injection + scriptContent
-      }
+    const injectionCode = apiKey
+      ? `process.env.GLM_API_KEY = process.env.GLM_API_KEY || "${apiKey}";`
+      : `console.error("⚠️  Warning: GLM_API_KEY is not set in the Vercel environment.");`
+
+    const injection = `\n// Injected by Vercel\n${injectionCode}\n`
+
+    if (scriptContent.startsWith('#!/')) {
+      const firstNewline = scriptContent.indexOf('\n')
+      scriptContent =
+        scriptContent.slice(0, firstNewline + 1) +
+        injection +
+        scriptContent.slice(firstNewline + 1)
+    } else {
+      scriptContent = injection + scriptContent
     }
 
     res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
